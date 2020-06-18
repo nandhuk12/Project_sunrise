@@ -10,8 +10,8 @@ Available Files
 1. models->trained model,
 2. Screenshots,
 3. Complete code,
-4. Intelligent_keyboard.ipynb-> Notebook file 
-5. samp_dataset.txt-> Dataset used for training
+4. Intelligent_keyboard.ipynb-> Notebook file,
+5. samp_dataset.txt-> Dataset used for training.
 
 
 Instruction to give input
