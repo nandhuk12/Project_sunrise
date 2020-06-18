@@ -1,0 +1,207 @@
+#import libraries and packages
+import numpy as np
+import tensorflow.keras 
+from tensorflow.keras.models import Sequential 
+from tensorflow.keras.layers import Dense, LSTM, Dropout, Activation 
+from tensorflow.keras.optimizers import RMSprop, Adam
+from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.utils import to_categorical
+
+"""In this, first of all, version of the TensorFlow must be selected in
+order to import all the libraries and packages to implement the LSTM.
+Activation function, LSTM gates, Dropout values and dense for how
+deeply to backpropagate the neural layers, optimizer to optimize the
+loss value and ModelCheckpoint to fix the best model are imported."""
+
+#Define the model
+
+def buildmodel(VOCABULARY):
+    model = Sequential()
+    model.add(LSTM(512, input_shape = (SEQ_LENGTH, 1), return_sequences = True))
+    model.add(Dropout(0.2))
+    model.add(LSTM(512))
+    model.add(Dropout(0.2))
+    model.add(Dense(VOCABULARY, activation = 'softmax'))
+    model.compile(loss = 'categorical_crossentropy', optimizer = 'adam')
+    return model
+
+"""Once all the packages and libraries are imported, secondly should
+build the model. The dense value, dropout value and number of layers
+to deeply back propagate, assigning the softmax activation function,
+adam optimization are used for building the model and returns the
+model in the vocabulary."""
+
+#Load the dataset
+
+file = open('F:\Projects\Intelligent keyboard\samp_dataset.txt',encoding = 'utf8')
+raw_text = file.read()    #you need to read further characters as well
+raw_text = raw_text.lower()
+
+"""After defining the model, should load the dataset and convert all
+the letters in lowercase for making it common. So, the similar words
+will have the same vector value to lower the complexity of the model
+while building."""
+
+#Clean the dataset
+
+chars = sorted(list(set(raw_text)))
+print(chars)
+
+bad_chars = ['#',':','\n','\ufeff','!','ä', 'æ', 'é', 'ë', '"', "'", ':', ';', '=', '?', '[', ']', '_',  '(', ')', ',', '-', '.', ';', '=', '?', '[', ']', '_','\n', '!', '"', "'", '(', ')', ',','.', '*', '@', '†','(',')',',','-','=',']','[','!', '"', "'", '(', ')', ',', ':', ';', '=', '\n','¤', '¦', '©', '«', 'ã', '†' ' ', '!', '.', '?', '[', ']', '_','-', '.','_','?',"'",'"',';',':']
+for i in range(len(bad_chars)):
+    raw_text = raw_text.replace(bad_chars[i],"") 
+
+chars = sorted(list(set(raw_text)))
+print(chars)
+
+"""Once the dataset is loaded, all the special characters which is
+called bad characters should be removed and replaced with the null
+space “”. Because if the user gives any of the special characters, the
+model does not know what to predict next and it waits for the user to
+give the input again."""
+
+#Modify the dataset in the form of model
+
+text_length = len(raw_text)
+char_length = len(chars)
+VOCABULARY = char_length
+print("Text length = " + str(text_length))
+print("No. of characters = " + str(char_length))
+
+"""After cleaning, the dataset is modified into model by assigning it
+into the vocabulary. The number of characters and length of the text
+from the dataset has been printed."""
+
+#Train the model
+char_to_int = dict((c, i) for i, c in enumerate(chars))
+input_strings = []
+output_strings = []
+
+for i in range(len(raw_text) - SEQ_LENGTH):
+    X_text = raw_text[i: i + SEQ_LENGTH]
+    X = [char_to_int[char] for char in X_text]
+    input_strings.append(X)    
+    Y = raw_text[i + SEQ_LENGTH]
+    output_strings.append(char_to_int[Y])
+
+"""Once the dataset is modified into model, should train the model.
+When the user gives the input, the model starts to back propagate the
+neural layer to predict the next word and appends it to the input string."""
+
+length = len(input_strings)
+input_strings = np.array(input_strings)
+input_strings = np.reshape(input_strings, (input_strings.shape[0], input_strings.shape[1], 1))
+input_strings = input_strings/float(VOCABULARY)
+
+output_strings = np.array(output_strings)
+output_strings = to_categorical(output_strings)
+print(input_strings.shape)
+print(output_strings.shape)
+
+"""After appending the sequence of words with the input string, it is
+passed inside the categorical entropy to produce the output string which
+has the lowest loss value. In this, it prints the number of words in the
+dataset which is 6053, 100 is the sequence length which is a seed point
+to compare with entire dataset, 1 is the output which is produced at a
+time and 27 is the number of characters in the dataset."""
+
+#Save the best model
+model = buildmodel(VOCABULARY)
+filepath="F:\Projects\Intelligent keyboard\ori_dataset\weights-improvement-{epoch:02d}-{loss:.4f}.hdf5"
+checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='max')
+callbacks_list = [checkpoint]
+
+history = model.fit(input_strings, output_strings, epochs = 200, batch_size =512, callbacks = callbacks_list)
+
+"""After training the model, the best model is to be saved which has
+the lowest loss value and to be fitted by assigning the batch size which
+is called the number of times each seed point has to be compared with
+the entire dataset and batch size is number of words taken as a seed
+point and callbacks is to show the loss value and batch size completed
+for each epoch. In history,loss value will be decreased for each epoch. 
+Similarly, it reduces the loss value till 200 epochs for the dataset."""
+
+#Load the model and generate the text
+filename = 'F:\Projects\Intelligent keyboard\samp_model\weights-improvement-199-0.0006.hdf5'
+model = buildmodel(VOCABULARY)
+model.load_weights(filename)
+model.compile(loss = 'categorical_crossentropy', optimizer = 'adam')
+
+"""Once the model is saved and it is loaded using the path of the best
+model and compiles to produce the output. Then it generates the output
+in the text box while the input is given. The next chapter concludes the
+project."""
+
+#To create a text box for user input
+import ipywidgets as widgets
+from IPython.display import display
+original_text = []
+predicted_text = []
+int_to_char = dict((i, c) for i, c in enumerate(chars))
+text = widgets.Text()
+display(text)
+
+def handle_submit(sender):
+    global predicted_text
+    global original_text
+    
+    inp = list(text.value)
+    
+    last_word = inp[len(original_text):]
+    inp = inp[:len(original_text)]    
+    original_text = text.value    
+    last_word.append(' ')
+    
+    inp_text = [char_to_int[c] for c in inp]
+    last_word = [char_to_int[c] for c in last_word]
+    
+    if len(inp_text) > 100:
+        inp_text = inp_text[len(inp_text)-100: ]
+    if len(inp_text) < 100:
+        pad = []
+        space = char_to_int[' ']
+        pad = [space for i in range(100-len(inp_text))]
+        inp_text = pad + inp_text
+    
+    while len(last_word)>0:
+        X = np.reshape(inp_text, (1, SEQ_LENGTH, 1))
+        next_char = model.predict(X/float(VOCABULARY))
+        inp_text.append(last_word[0])
+        inp_text = inp_text[1:]
+        last_word.pop(0)
+    
+    next_word = []
+    next_char = ':'
+    while next_char != ' ':
+        X = np.reshape(inp_text, (1, SEQ_LENGTH, 1))
+        next_char = model.predict(X/float(VOCABULARY))
+        index = np.argmax(next_char)        
+        next_word.append(int_to_char[index])
+        inp_text.append(index)
+        inp_text = inp_text[1:]
+        next_char = int_to_char[index]
+    
+    predicted_text = predicted_text + [''.join(next_word)]
+    print(" " + ''.join(next_word), end='|')
+    
+text.on_submit(handle_submit)
+
+"""Once the user gives input in the text box, the model will search the sentence 
+throughout the vocabulary which has been trained and gives suggestions in subtly.
+When the user hits the enter key, the predicted words will append in the text box."""
+
+#Tabulating the predicted text
+from tabulate import tabulate
+
+original_text = original_text.split()
+predicted_text.insert(0,"")
+predicted_text.pop()
+
+table = []
+for i in range(len(original_text)):
+    table.append([original_text[i], predicted_text[i]])
+print(tabulate(table, headers = ['Actual Word', 'Predicted Word']))
+
+"""This will show the actual words and predicted words to show how well it is accurate."""
+
+
