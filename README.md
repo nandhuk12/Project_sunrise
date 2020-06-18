@@ -7,14 +7,16 @@ The purpose of the project is to make an intelligent keyboard to anticipate the 
 
 Available Files
 ---------------
-models
-Screenshots
-Complete_code.txt
-Intelligent_keyboard.ipynb
-README.md
-samp_dataset.txt
+1. models->trained model,
+2. Screenshots,
+3. Complete code,
+4. Intelligent_keyboard.ipynb-> Notebook file 
+5. samp_dataset.txt-> Dataset used for training
 
 
 Instruction to give input
 -------------------------
-1. Give the input from the dataset in the text box.
+1. Open Intelligent_keyboard.ipynd in Jupyter Notebook or any IDE.
+2. After Exceution, Give the input from the dataset in the text box.
+3. Before leaving space,press Enter key after typing each word on the text box to show the suggesstion.
+4. Appropriate suggestion will be given after 3 or 4 words, because it needs to find the correct sentence.
